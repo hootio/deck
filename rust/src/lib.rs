@@ -1,24 +1,18 @@
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
+
 use std::fmt;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum Suit {
-    Spade = 0,
-    Diamond,
-    Club,
-    Heart,
-    Joker,
-}
-// TODO: Add enum iterator instead
-const SUITS: [Suit; 4] = [Suit::Spade, Suit::Diamond, Suit::Club, Suit::Heart];
-
-impl fmt::Display for Suit {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
+#[derive(Clone, Copy, Debug, EnumIter, PartialEq)]
+pub enum Suit {
+    Clubs = 1,
+    Diamonds,
+    Hearts,
+    Spades,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum Rank {
+#[derive(Clone, Copy, Debug, EnumIter, PartialEq)]
+pub enum Rank {
     Ace = 1,
     Two,
     Three,
@@ -33,118 +27,167 @@ enum Rank {
     Queen,
     King,
 }
-// TODO: Add enum iterator instead
-const RANKS: [Rank; 13] = [
-    Rank::Ace,
-    Rank::Two,
-    Rank::Three,
-    Rank::Four,
-    Rank::Five,
-    Rank::Six,
-    Rank::Seven,
-    Rank::Eight,
-    Rank::Nine,
-    Rank::Ten,
-    Rank::Jack,
-    Rank::Queen,
-    Rank::King,
-];
 
-impl fmt::Display for Rank {
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StandardCard {
+    suit: Suit,
+    rank: Rank,
+}
+
+impl fmt::Display for StandardCard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{:?} of {:?}", self.rank, self.suit)
     }
+}
+
+// impl StandardCard {
+//     pub const MIN_RANK: Rank = Rank::Ace;
+//     pub const MAX_RANK: Rank = Rank::King;
+//     pub fn abs_rank(&self) -> u32 {
+//         self.suit as u32 * Card::MAX_RANK as u32 + self.rank.unwrap() as u32
+//     }
+// }
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Color {
+    Red,
+    Black,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct Card {
-    suit: Suit,
-    rank: Option<Rank>,
+pub struct JokerCard {
+    color: Color,
 }
 
-impl Card {
-    pub const MIN_RANK: Rank = Rank::Ace;
-    pub const MAX_RANK: Rank = Rank::King;
-    pub fn new(suit: Suit, rank: Option<Rank>) -> Self {
-        if (suit == Suit::Joker) != (rank == None) {
-            // TODO: Handle this better?
-            panic!("this is not allowed!");
-        }
-
-        Card { suit, rank }
-    }
-    pub fn abs_rank(&self) -> u32 {
-        self.suit as u32 * Card::MAX_RANK as u32 + self.rank.unwrap() as u32
-    }
-}
-
-impl fmt::Display for Card {
+impl fmt::Display for JokerCard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.suit == Suit::Joker {
-            write!(f, "Joker")
+        write!(f, "{:?} Joker", self.color)
+    }
+}
+
+pub trait Card {
+    fn abs_rank(&self) -> u8;
+}
+
+impl fmt::Debug for dyn Card {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.abs_rank())
+    }
+}
+
+impl Card for StandardCard {
+    fn abs_rank(&self) -> u8 {
+        self.suit as u8 * 10 + self.rank as u8
+    }
+}
+
+impl Card for JokerCard {
+    fn abs_rank(&self) -> u8 {
+        if self.color == Color::Black {
+            0
         } else {
-            write!(
-                f,
-                "{} of {}s",
-                self.rank.unwrap().to_string(),
-                self.suit.to_string()
-            )
+            1
         }
     }
 }
 
-struct Deck {
-    cards: Vec<Card>,
+// impl Ord for dyn Card {
+//     fn cmp(&self, other: &Self) -> Ordering {
+//         self.abs_rank().cmp(&other.abs_rank())
+//     }
+// }
+
+pub struct Deck {
+    cards: Vec<Box<dyn Card>>,
 }
 
 impl Deck {
-    const TYPICAL_SIZE: usize = 54;
+    const STANDARD_SIZE: usize = 52;
 
-    pub fn new(num_decks: u32, num_jokers_per_deck: u32) -> Self {
-        let mut cards: Vec<Card> = Vec::with_capacity(Deck::TYPICAL_SIZE * num_decks as usize);
-        for _ in 0..num_decks {
-            for s in SUITS {
-                for r in RANKS {
-                    cards.push(Card::new(s, Some(r)));
-                }
-            }
-            for _ in 0..num_jokers_per_deck {
-                cards.push(Card::new(Suit::Joker, None))
+    pub fn new() -> Self {
+        let mut cards: Vec<Box<dyn Card>> = Vec::with_capacity(Deck::STANDARD_SIZE);
+        for suit in Suit::iter() {
+            for rank in Rank::iter() {
+                cards.push(Box::new(StandardCard { suit, rank }));
             }
         }
         Deck { cards }
+    }
+
+    pub fn new_empty() -> Self {
+        let cards: Vec<Box<dyn Card>> = Vec::new();
+        Deck { cards }
+    }
+
+    pub fn empty(&mut self) {
+        self.cards.clear();
+    }
+
+    pub fn size(&self) -> usize {
+        self.cards.len()
+    }
+
+    // pub fn sort(&self) {
+    //     self.cards.sort_by(|a, b| b.abs_rank().cmp(&a.abs_rank()));
+    // }
+
+    pub fn draw(&mut self) -> Option<Box<dyn Card>> {
+        self.cards.pop()
+    }
+}
+
+impl Default for Deck {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn good_card() {
-        let card = Card::new(Suit::Spade, Some(Rank::Six));
-        assert_eq!(card.to_string(), "Six of Spades");
-        let card = Card::new(Suit::Joker, None);
-        assert_eq!(card.to_string(), "Joker");
-    }
-    #[test]
-    #[should_panic]
-    fn bad_card1() {
-        Card::new(Suit::Joker, Some(Rank::Six));
-    }
-    #[test]
-    #[should_panic]
-    fn bad_card2() {
-        Card::new(Suit::Spade, None);
+        let standard = StandardCard {
+            suit: Suit::Spades,
+            rank: Rank::Six,
+        };
+        assert_eq!(standard.to_string(), "Six of Spades");
+
+        let joker = JokerCard {
+            color: Color::Black,
+        };
+        assert_eq!(joker.to_string(), "Black Joker");
     }
 
     #[test]
     fn deck() {
-        let param_tupes: [(u32, u32); 4] = [(1, 0), (1, 2), (7, 0), (7, 2)];
+        let deck = Deck::new();
+        assert_eq!(deck.size(), 52);
+    }
 
-        for (num_deck, num_jokers_per_deck) in param_tupes {
-            let deck = Deck::new(num_deck, num_jokers_per_deck);
-            let expected_len = (num_deck * (52 + num_jokers_per_deck)) as usize;
-            assert_eq!(deck.cards.len(), expected_len);
-        }
+    #[test]
+    fn empty_deck() {
+        let deck = Deck::new_empty();
+        assert_eq!(deck.size(), 0);
+    }
+
+    #[test]
+    fn draw_card() {
+        let mut deck = Deck::new();
+        let top = deck.draw().unwrap();
+        let expected = StandardCard {
+            suit: Suit::Spades,
+            rank: Rank::King,
+        };
+        assert_eq!(top.abs_rank(), expected.abs_rank());
+        assert_eq!(deck.size(), 51);
+    }
+
+    #[test]
+    fn draw_empty() {
+        let mut deck = Deck::new_empty();
+        assert!(deck.draw().is_none());
+        assert_eq!(deck.size(), 0);
     }
 }
