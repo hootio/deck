@@ -44,7 +44,7 @@ impl fmt::Display for StandardCard {
 //     pub const MIN_RANK: Rank = Rank::Ace;
 //     pub const MAX_RANK: Rank = Rank::King;
 //     pub fn abs_rank(&self) -> u32 {
-//         self.suit as u32 * Card::MAX_RANK as u32 + self.rank.unwrap() as u32
+//         self.suit as u32 * PlayingCard::MAX_RANK as u32 + self.rank.unwrap() as u32
 //     }
 // }
 
@@ -65,57 +65,62 @@ impl fmt::Display for JokerCard {
     }
 }
 
-pub trait Card {
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Card {
+    StandardCard(StandardCard),
+    JokerCard(JokerCard),
+}
+
+pub trait PlayingCard {
     fn abs_rank(&self) -> u8;
 }
 
-impl fmt::Debug for dyn Card {
+impl fmt::Debug for dyn PlayingCard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self.abs_rank())
     }
 }
 
-impl Card for StandardCard {
+impl PlayingCard for Card {
     fn abs_rank(&self) -> u8 {
-        self.suit as u8 * 10 + self.rank as u8
-    }
-}
-
-impl Card for JokerCard {
-    fn abs_rank(&self) -> u8 {
-        if self.color == Color::Black {
-            0
-        } else {
-            1
+        match self {
+            Card::StandardCard(standard) => standard.suit as u8 * 10 + standard.rank as u8,
+            Card::JokerCard(joker) => {
+                if joker.color == Color::Black {
+                    0
+                } else {
+                    1
+                }
+            }
         }
     }
 }
 
-// impl Ord for dyn Card {
+// impl Ord for dyn PlayingCard {
 //     fn cmp(&self, other: &Self) -> Ordering {
 //         self.abs_rank().cmp(&other.abs_rank())
 //     }
 // }
 
 pub struct Deck {
-    cards: Vec<Box<dyn Card>>,
+    cards: Vec<Card>,
 }
 
 impl Deck {
     const STANDARD_SIZE: usize = 52;
 
     pub fn new() -> Self {
-        let mut cards: Vec<Box<dyn Card>> = Vec::with_capacity(Deck::STANDARD_SIZE);
+        let mut cards: Vec<Card> = Vec::with_capacity(Deck::STANDARD_SIZE);
         for suit in Suit::iter() {
             for rank in Rank::iter() {
-                cards.push(Box::new(StandardCard { suit, rank }));
+                cards.push(Card::StandardCard(StandardCard { suit, rank }));
             }
         }
         Deck { cards }
     }
 
     pub fn new_empty() -> Self {
-        let cards: Vec<Box<dyn Card>> = Vec::new();
+        let cards: Vec<Card> = Vec::new();
         Deck { cards }
     }
 
@@ -131,7 +136,7 @@ impl Deck {
     //     self.cards.sort_by(|a, b| b.abs_rank().cmp(&a.abs_rank()));
     // }
 
-    pub fn draw(&mut self) -> Option<Box<dyn Card>> {
+    pub fn draw(&mut self) -> Option<Card> {
         self.cards.pop()
     }
 }
@@ -176,11 +181,11 @@ mod tests {
     fn draw_card() {
         let mut deck = Deck::new();
         let top = deck.draw().unwrap();
-        let expected = StandardCard {
+        let expected = Card::StandardCard(StandardCard {
             suit: Suit::Spades,
             rank: Rank::King,
-        };
-        assert_eq!(top.abs_rank(), expected.abs_rank());
+        });
+        assert_eq!(top, expected);
         assert_eq!(deck.size(), 51);
     }
 
