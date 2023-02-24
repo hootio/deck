@@ -1,9 +1,10 @@
+use rand::prelude::SliceRandom;
+use std::cmp::Ordering;
+use std::fmt;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
-use std::fmt;
-
-#[derive(Clone, Copy, Debug, EnumIter, PartialEq)]
+#[derive(Clone, Copy, Debug, EnumIter, Eq, PartialEq, PartialOrd)]
 pub enum Suit {
     Clubs = 1,
     Diamonds,
@@ -11,7 +12,8 @@ pub enum Suit {
     Spades,
 }
 
-#[derive(Clone, Copy, Debug, EnumIter, PartialEq)]
+#[derive(Clone, Copy, Debug, EnumIter, Eq, PartialEq, PartialOrd)]
+
 pub enum Rank {
     Ace = 1,
     Two,
@@ -28,7 +30,7 @@ pub enum Rank {
     King,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
 pub struct StandardCard {
     suit: Suit,
     rank: Rank,
@@ -40,21 +42,13 @@ impl fmt::Display for StandardCard {
     }
 }
 
-// impl StandardCard {
-//     pub const MIN_RANK: Rank = Rank::Ace;
-//     pub const MAX_RANK: Rank = Rank::King;
-//     pub fn abs_rank(&self) -> u32 {
-//         self.suit as u32 * PlayingCard::MAX_RANK as u32 + self.rank.unwrap() as u32
-//     }
-// }
-
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
 pub enum Color {
     Red,
     Black,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
 pub struct JokerCard {
     color: Color,
 }
@@ -65,7 +59,7 @@ impl fmt::Display for JokerCard {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
 pub enum Card {
     StandardCard(StandardCard),
     JokerCard(JokerCard),
@@ -78,6 +72,12 @@ pub trait PlayingCard {
 impl fmt::Debug for dyn PlayingCard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self.abs_rank())
+    }
+}
+
+impl Ord for Card {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.abs_rank().cmp(&other.abs_rank())
     }
 }
 
@@ -95,12 +95,6 @@ impl PlayingCard for Card {
         }
     }
 }
-
-// impl Ord for dyn PlayingCard {
-//     fn cmp(&self, other: &Self) -> Ordering {
-//         self.abs_rank().cmp(&other.abs_rank())
-//     }
-// }
 
 pub struct Deck {
     cards: Vec<Card>,
@@ -132,12 +126,16 @@ impl Deck {
         self.cards.len()
     }
 
-    // pub fn sort(&self) {
-    //     self.cards.sort_by(|a, b| b.abs_rank().cmp(&a.abs_rank()));
-    // }
-
     pub fn draw(&mut self) -> Option<Card> {
         self.cards.pop()
+    }
+
+    pub fn sort(&mut self) {
+        self.cards.sort();
+    }
+
+    pub fn shuffle(&mut self) {
+        self.cards.shuffle(&mut rand::thread_rng());
     }
 }
 
@@ -152,7 +150,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn good_card() {
+    fn card_string() {
         let standard = StandardCard {
             suit: Suit::Spades,
             rank: Rank::Six,
@@ -172,19 +170,19 @@ mod tests {
     }
 
     #[test]
-    fn empty_deck() {
+    fn deck_empty() {
         let deck = Deck::new_empty();
         assert_eq!(deck.size(), 0);
     }
 
     #[test]
-    fn draw_card() {
+    fn draw() {
         let mut deck = Deck::new();
-        let top = deck.draw().unwrap();
         let expected = Card::StandardCard(StandardCard {
             suit: Suit::Spades,
             rank: Rank::King,
         });
+        let top = deck.draw().unwrap();
         assert_eq!(top, expected);
         assert_eq!(deck.size(), 51);
     }
@@ -194,5 +192,28 @@ mod tests {
         let mut deck = Deck::new_empty();
         assert!(deck.draw().is_none());
         assert_eq!(deck.size(), 0);
+    }
+
+    #[test]
+    fn sort() {
+        let mut deck = Deck::new();
+        let expected = Card::StandardCard(StandardCard {
+            suit: Suit::Spades,
+            rank: Rank::King,
+        });
+        deck.cards.reverse();
+        let top = deck.draw().unwrap();
+        assert_ne!(top, expected);
+        deck.sort();
+        let top = deck.draw().unwrap();
+        assert_eq!(top, expected);
+    }
+
+    #[test]
+    fn shuffle() {
+        let sorted = Deck::new();
+        let mut deck = Deck::new();
+        deck.shuffle();
+        assert_ne!(sorted.cards, deck.cards);
     }
 }
