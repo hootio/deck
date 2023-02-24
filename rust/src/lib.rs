@@ -4,6 +4,11 @@ use std::fmt;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
+pub trait CardTrait {
+    fn abs_rank(&self) -> u8;
+    fn value(&self) -> u8;
+}
+
 #[derive(Clone, Copy, Debug, EnumIter, Eq, PartialEq, PartialOrd)]
 pub enum Suit {
     Clubs = 1,
@@ -65,13 +70,9 @@ pub enum Card {
     JokerCard(JokerCard),
 }
 
-pub trait PlayingCard {
-    fn abs_rank(&self) -> u8;
-}
-
-impl fmt::Debug for dyn PlayingCard {
+impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self.abs_rank())
+        write!(f, "Card::{:?}", self)
     }
 }
 
@@ -81,7 +82,7 @@ impl Ord for Card {
     }
 }
 
-impl PlayingCard for Card {
+impl CardTrait for Card {
     fn abs_rank(&self) -> u8 {
         match self {
             Card::StandardCard(standard) => standard.suit as u8 * 10 + standard.rank as u8,
@@ -92,6 +93,19 @@ impl PlayingCard for Card {
                     1
                 }
             }
+        }
+    }
+    fn value(&self) -> u8 {
+        match self {
+            Card::StandardCard(standard) => {
+                let rank = standard.rank as u8;
+                if rank < 10 {
+                    rank
+                } else {
+                    10
+                }
+            }
+            Card::JokerCard(_joker) => 0,
         }
     }
 }
@@ -151,6 +165,15 @@ mod tests {
 
     #[test]
     fn card_string() {
+        let card = Card::StandardCard(StandardCard {
+            suit: Suit::Hearts,
+            rank: Rank::King,
+        });
+        assert_eq!(
+            card.to_string(),
+            "Card::StandardCard(StandardCard { suit: Hearts, rank: King })"
+        );
+
         let standard = StandardCard {
             suit: Suit::Spades,
             rank: Rank::Six,
@@ -161,6 +184,26 @@ mod tests {
             color: Color::Black,
         };
         assert_eq!(joker.to_string(), "Black Joker");
+    }
+
+    #[test]
+    fn card_value() {
+        let six = Card::StandardCard(StandardCard {
+            suit: Suit::Spades,
+            rank: Rank::Six,
+        });
+        assert_eq!(six.value(), 6);
+
+        let king = Card::StandardCard(StandardCard {
+            suit: Suit::Hearts,
+            rank: Rank::King,
+        });
+        assert_eq!(king.value(), 10);
+
+        let joker = Card::JokerCard(JokerCard {
+            color: Color::Black,
+        });
+        assert_eq!(joker.value(), 0);
     }
 
     #[test]
