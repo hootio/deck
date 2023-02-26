@@ -154,6 +154,13 @@ impl Deck {
         self.cards.len()
     }
 
+    pub fn top(&mut self) -> Option<Card> {
+        match self.cards.len() {
+            0 => None,
+            n => Some(self.cards[n - 1]),
+        }
+    }
+
     pub fn draw(&mut self) -> Option<Card> {
         self.cards.pop()
     }
@@ -239,6 +246,25 @@ mod tests {
     #[test]
     fn deck_empty() {
         let deck = Deck::new_empty();
+        assert_eq!(deck.size(), 0);
+    }
+
+    #[test]
+    fn top() {
+        let mut deck = Deck::new();
+        let expected = Card::StandardCard(StandardCard {
+            suit: Suit::Spades,
+            rank: Rank::King,
+        });
+        let top = deck.top().unwrap();
+        assert_eq!(top, expected);
+        assert_eq!(deck.size(), 52);
+    }
+
+    #[test]
+    fn top_empty() {
+        let mut deck = Deck::new_empty();
+        assert!(deck.top().is_none());
         assert_eq!(deck.size(), 0);
     }
 
