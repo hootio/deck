@@ -158,6 +158,10 @@ impl Deck {
         self.cards.pop()
     }
 
+    pub fn add(&mut self, card: Card) {
+        self.cards.push(card);
+    }
+
     pub fn sort(&mut self) {
         self.cards.sort();
     }
@@ -254,6 +258,20 @@ mod tests {
     fn draw_empty() {
         let mut deck = Deck::new_empty();
         assert!(deck.draw().is_none());
+        assert_eq!(deck.size(), 0);
+    }
+
+    #[test]
+    fn add() {
+        let mut deck = Deck::new_empty();
+        let card = Card::StandardCard(StandardCard {
+            suit: Suit::Spades,
+            rank: Rank::King,
+        });
+        deck.add(card);
+        assert_eq!(deck.size(), 1);
+        let top = deck.draw().unwrap();
+        assert_eq!(top, card);
         assert_eq!(deck.size(), 0);
     }
 
