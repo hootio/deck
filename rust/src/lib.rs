@@ -117,12 +117,26 @@ pub struct Deck {
 impl Deck {
     const STANDARD_SIZE: usize = 52;
 
-    pub fn new() -> Self {
+    fn new_standard_52() -> Vec<Card> {
         let mut cards: Vec<Card> = Vec::with_capacity(Deck::STANDARD_SIZE);
         for suit in Suit::iter() {
             for rank in Rank::iter() {
                 cards.push(Card::StandardCard(StandardCard { suit, rank }));
             }
+        }
+        cards
+    }
+
+    pub fn new() -> Self {
+        Deck {
+            cards: Self::new_standard_52(),
+        }
+    }
+
+    pub fn new_count(count: usize) -> Self {
+        let mut cards: Vec<Card> = Vec::with_capacity(Deck::STANDARD_SIZE * count);
+        for _ in 0..count {
+            cards.append(&mut Self::new_standard_52())
         }
         Deck { cards }
     }
@@ -210,6 +224,12 @@ mod tests {
     fn deck() {
         let deck = Deck::new();
         assert_eq!(deck.size(), 52);
+    }
+
+    #[test]
+    fn deck_count() {
+        let deck = Deck::new_count(6);
+        assert_eq!(deck.size(), 52 * 6);
     }
 
     #[test]
