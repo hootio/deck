@@ -154,10 +154,19 @@ impl Deck {
         self.cards.len()
     }
 
+    pub fn peak(&mut self, index: usize) -> Option<Card> {
+        if index >= self.size() {
+            None
+        } else {
+            Some(self.cards[index])
+        }
+    }
+
     pub fn top(&mut self) -> Option<Card> {
-        match self.cards.len() {
-            0 => None,
-            n => Some(self.cards[n - 1]),
+        if self.size() == 0 {
+            None
+        } else {
+            self.peak(self.size() - 1)
         }
     }
 
@@ -246,6 +255,31 @@ mod tests {
     #[test]
     fn deck_empty() {
         let deck = Deck::new_empty();
+        assert_eq!(deck.size(), 0);
+    }
+
+    #[test]
+    fn peak() {
+        let mut deck = Deck::new();
+        let first = Card::StandardCard(StandardCard {
+            suit: Suit::Clubs,
+            rank: Rank::Ace,
+        });
+        let last = Card::StandardCard(StandardCard {
+            suit: Suit::Spades,
+            rank: Rank::King,
+        });
+        assert_eq!(deck.peak(0).unwrap(), first);
+        assert_eq!(deck.peak(51).unwrap(), last);
+        assert!(deck.peak(52).is_none());
+        assert_eq!(deck.size(), 52);
+    }
+
+    #[test]
+    fn peak_empty() {
+        let mut deck = Deck::new_empty();
+        assert!(deck.peak(0).is_none());
+        assert!(deck.peak(1).is_none());
         assert_eq!(deck.size(), 0);
     }
 
