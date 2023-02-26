@@ -257,6 +257,7 @@ mod tests {
         let sorted = Deck::new();
         let mut deck = Deck::new();
         deck.shuffle();
+        // the probability of this asssert failing is: 1/deck.size()!
         assert_ne!(sorted.cards, deck.cards);
     }
 }
