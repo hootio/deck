@@ -6,7 +6,7 @@ use strum_macros::EnumIter;
 
 pub trait CardTrait {
     fn abs_rank(&self) -> u8;
-    fn value(&self) -> u8;
+    fn value(&self, soft: bool) -> u8;
 }
 
 #[derive(Clone, Copy, Debug, EnumIter, Eq, PartialEq, PartialOrd)]
@@ -95,11 +95,13 @@ impl CardTrait for Card {
             }
         }
     }
-    fn value(&self) -> u8 {
+    fn value(&self, soft: bool) -> u8 {
         match self {
             Card::StandardCard(standard) => {
                 let rank = standard.rank as u8;
-                if rank < 10 {
+                if rank == 1 && soft == true {
+                    11
+                } else if rank < 10 {
                     rank
                 } else {
                     10
@@ -185,6 +187,10 @@ impl Deck {
     pub fn shuffle(&mut self) {
         self.cards.shuffle(&mut rand::thread_rng());
     }
+
+    pub fn value(&self, soft: bool) -> u16 {
+        self.cards.iter().map(|c| c.value(soft) as u16).sum()
+    }
 }
 
 impl Default for Deck {
@@ -222,22 +228,34 @@ mod tests {
 
     #[test]
     fn card_value() {
+        let eleven = Card::StandardCard(StandardCard {
+            suit: Suit::Spades,
+            rank: Rank::Ace,
+        });
+        assert_eq!(eleven.value(true), 11);
+
+        let one = Card::StandardCard(StandardCard {
+            suit: Suit::Spades,
+            rank: Rank::Ace,
+        });
+        assert_eq!(one.value(false), 1);
+
         let six = Card::StandardCard(StandardCard {
             suit: Suit::Spades,
             rank: Rank::Six,
         });
-        assert_eq!(six.value(), 6);
+        assert_eq!(six.value(true), 6);
 
         let king = Card::StandardCard(StandardCard {
             suit: Suit::Hearts,
             rank: Rank::King,
         });
-        assert_eq!(king.value(), 10);
+        assert_eq!(king.value(true), 10);
 
         let joker = Card::JokerCard(JokerCard {
             color: Color::Black,
         });
-        assert_eq!(joker.value(), 0);
+        assert_eq!(joker.value(true), 0);
     }
 
     #[test]
@@ -357,5 +375,19 @@ mod tests {
         deck.shuffle();
         // the probability of this asssert failing is: 1/deck.size()!
         assert_ne!(sorted.cards, deck.cards);
+    }
+
+    #[test]
+    fn value() {
+        let deck = Deck::new();
+        assert_eq!(deck.value(true), 380);
+        assert_eq!(deck.value(false), 340);
+    }
+
+    #[test]
+    fn value_empty() {
+        let deck = Deck::new_empty();
+        assert_eq!(deck.value(true), 0);
+        assert_eq!(deck.value(false), 0);
     }
 }
