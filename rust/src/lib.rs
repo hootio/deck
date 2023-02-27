@@ -116,6 +116,16 @@ pub struct Deck {
     cards: Vec<Card>,
 }
 
+impl fmt::Display for Deck {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut card_string = String::new();
+        for card in &self.cards {
+            card_string.push_str(&card.to_string());
+        }
+        write!(f, "{:?}", card_string)
+    }
+}
+
 impl Deck {
     const STANDARD_SIZE: usize = 52;
 
@@ -274,6 +284,12 @@ mod tests {
     fn deck_empty() {
         let deck = Deck::new_empty();
         assert_eq!(deck.size(), 0);
+    }
+
+    #[test]
+    fn deck_string() {
+        let deck = Deck::new();
+        assert_eq!(deck.to_string(), "\"Card::StandardCard(StandardCard { suit: Clubs, rank: Ace })Card::StandardCard(StandardCard { suit: Clubs, rank: Two })Card::StandardCard(StandardCard { suit: Clubs, rank: Three })Card::StandardCard(StandardCard { suit: Clubs, rank: Four })Card::StandardCard(StandardCard { suit: Clubs, rank: Five })Card::StandardCard(StandardCard { suit: Clubs, rank: Six })Card::StandardCard(StandardCard { suit: Clubs, rank: Seven })Card::StandardCard(StandardCard { suit: Clubs, rank: Eight })Card::StandardCard(StandardCard { suit: Clubs, rank: Nine })Card::StandardCard(StandardCard { suit: Clubs, rank: Ten })Card::StandardCard(StandardCard { suit: Clubs, rank: Jack })Card::StandardCard(StandardCard { suit: Clubs, rank: Queen })Card::StandardCard(StandardCard { suit: Clubs, rank: King })Card::StandardCard(StandardCard { suit: Diamonds, rank: Ace })Card::StandardCard(StandardCard { suit: Diamonds, rank: Two })Card::StandardCard(StandardCard { suit: Diamonds, rank: Three })Card::StandardCard(StandardCard { suit: Diamonds, rank: Four })Card::StandardCard(StandardCard { suit: Diamonds, rank: Five })Card::StandardCard(StandardCard { suit: Diamonds, rank: Six })Card::StandardCard(StandardCard { suit: Diamonds, rank: Seven })Card::StandardCard(StandardCard { suit: Diamonds, rank: Eight })Card::StandardCard(StandardCard { suit: Diamonds, rank: Nine })Card::StandardCard(StandardCard { suit: Diamonds, rank: Ten })Card::StandardCard(StandardCard { suit: Diamonds, rank: Jack })Card::StandardCard(StandardCard { suit: Diamonds, rank: Queen })Card::StandardCard(StandardCard { suit: Diamonds, rank: King })Card::StandardCard(StandardCard { suit: Hearts, rank: Ace })Card::StandardCard(StandardCard { suit: Hearts, rank: Two })Card::StandardCard(StandardCard { suit: Hearts, rank: Three })Card::StandardCard(StandardCard { suit: Hearts, rank: Four })Card::StandardCard(StandardCard { suit: Hearts, rank: Five })Card::StandardCard(StandardCard { suit: Hearts, rank: Six })Card::StandardCard(StandardCard { suit: Hearts, rank: Seven })Card::StandardCard(StandardCard { suit: Hearts, rank: Eight })Card::StandardCard(StandardCard { suit: Hearts, rank: Nine })Card::StandardCard(StandardCard { suit: Hearts, rank: Ten })Card::StandardCard(StandardCard { suit: Hearts, rank: Jack })Card::StandardCard(StandardCard { suit: Hearts, rank: Queen })Card::StandardCard(StandardCard { suit: Hearts, rank: King })Card::StandardCard(StandardCard { suit: Spades, rank: Ace })Card::StandardCard(StandardCard { suit: Spades, rank: Two })Card::StandardCard(StandardCard { suit: Spades, rank: Three })Card::StandardCard(StandardCard { suit: Spades, rank: Four })Card::StandardCard(StandardCard { suit: Spades, rank: Five })Card::StandardCard(StandardCard { suit: Spades, rank: Six })Card::StandardCard(StandardCard { suit: Spades, rank: Seven })Card::StandardCard(StandardCard { suit: Spades, rank: Eight })Card::StandardCard(StandardCard { suit: Spades, rank: Nine })Card::StandardCard(StandardCard { suit: Spades, rank: Ten })Card::StandardCard(StandardCard { suit: Spades, rank: Jack })Card::StandardCard(StandardCard { suit: Spades, rank: Queen })Card::StandardCard(StandardCard { suit: Spades, rank: King })\"");
     }
 
     #[test]
